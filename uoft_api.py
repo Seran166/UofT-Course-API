@@ -44,7 +44,7 @@ class Course:
         sections = course_data['sections']
         for lec_or_tut in sections:
             print(f'{lec_or_tut['type']}: {lec_or_tut['name']}')
-
+            
 
 # data_raw = {
 #     "courseCodeAndTitleProps": {
@@ -98,6 +98,8 @@ headers = {
     "Referer": "https://ttb.utoronto.ca/"
 }
 
+# Note for future, take note of enrollment indicators, and that some tutorials are tied to some lecture times
+
 response = requests.post(
     url,
     headers=headers,
@@ -105,7 +107,8 @@ response = requests.post(
     timeout=30
 )
 
-Course(response)
+c = Course(response)
+
 
 
 

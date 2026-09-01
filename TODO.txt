@@ -1,0 +1,25 @@
+Database
+- For some reason, description is null
+- Figure out how to make a database for the uoft_api content
+
+Parse the prerequisites in a suitable way
+    - There's a credit requirement
+    - Need to paste all the requirements and try to find a pattern
+    - Maybe machine learning is the perfect fit for this ...
+
+- Implement fastapi
+
+- Given a course code get the course_info (This can be multuple functions for different info)
+    - Add a postrequisite
+    - Add a function that lists all courses mentioned in the prerequisite
+- Given a course department get the department info
+- Given a department, get a list of all courses
+- Look at other apis and copy them...
+
+- Then just create a react website to display it
+
+- We can use this api, to build a sort of timetable builder but better.
+    - Many people don't like ttb because they want to be able to view all the possibilities at once
+    - Use maximus's and saju's gripe to build something valid
+
+
