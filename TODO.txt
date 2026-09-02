@@ -1,5 +1,4 @@
 Database
-- For some reason, description is null
 - Figure out how to make a database for the uoft_api content
 
 Parse the prerequisites in a suitable way

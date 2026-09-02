@@ -14,7 +14,7 @@ def parse_html_with_response(response: requests.Response):
     return parse_html(soup)
 
 
-def parse_html_with_file(filename: str = 'uoft.html'):
+def parse_html_with_file(filename: str = 'expected_responses/uoft.html'):
     with open(filename, 'r', encoding='utf-8') as f:
         html_content = f.read()
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -35,7 +35,7 @@ def find_field_content(page: Tag, class_field: str) -> Tag | None:
 def find_field_content_body(page: Tag, class_field: str) -> Tag | None:
     span = page.find('div', class_=class_field)
     if span is not None:
-        field_content = span.find('span', class_='field-content')
+        field_content = span.find('div', class_='field-content')
         if field_content is not None:
             return field_content
 
@@ -48,6 +48,7 @@ def parse_html(soup: BeautifulSoup):
     for page in course_pages:
         title = page.h3.get_text(strip=True) if page.h3 is not None else ""
         course_code = title[:8]
+        title = title[11:]
 
         if not course_code:
             continue
@@ -55,8 +56,8 @@ def parse_html(soup: BeautifulSoup):
         course_hours = find_field_content(page, 'views-field views-field-field-hours')
         course_hours = course_hours.get_text(" ", strip=True) if course_hours is not None else None
         
-        description = find_field_content_body(page, 'views-field views-field-body')
-        description = description.get_text(" ", strip=True) if description is not None else None
+        description_div = find_field_content_body(page, 'views-field views-field-body')
+        description = description_div.p.get_text(" ", strip=True)if description_div is not None and description_div.p is not None else None
 
         prerequisites = find_field_content(page, 'views-field views-field-field-prerequisite')
         prerequisites = prerequisites.get_text(" ", strip=True) if prerequisites is not None else None
@@ -72,6 +73,7 @@ def parse_html(soup: BeautifulSoup):
 
         course_info = {
                 "course code": course_code,
+                "title": title,
                 "course hours": course_hours, 
                 "description": description, 
                 "prerequisites": prerequisites, 
@@ -81,7 +83,7 @@ def parse_html(soup: BeautifulSoup):
             }
         
         courses[course_code] = course_info
-
+        
     return courses
 
 
@@ -99,4 +101,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parse_html_with_file()

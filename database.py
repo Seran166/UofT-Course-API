@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 import psycopg
 from scrape import parse_html_with_file
 
-DEFAULT_HTML_FILE = "uoft.html"
+DEFAULT_HTML_FILE = "expected_responses/uoft.html"
 
 def database_url() -> str:
     load_dotenv()
@@ -48,6 +48,7 @@ def create_courses_table(connection: psycopg.Connection) -> None:
             """
             CREATE TABLE IF NOT EXISTS courses (
                 course_code TEXT PRIMARY KEY,
+                title TEXT,
                 breadth TEXT,
                 course_hours TEXT,
                 description TEXT,
@@ -63,6 +64,7 @@ def insert_into_database(connection: psycopg.Connection, courses: dict[str, dict
     rows = [
         (
             course["course code"],
+            course["title"],
             course["breadth"],
             course["course hours"],
             course["description"],
@@ -78,6 +80,7 @@ def insert_into_database(connection: psycopg.Connection, courses: dict[str, dict
             """
             INSERT INTO courses (
                 course_code,
+                title,
                 breadth,
                 course_hours,
                 description,
@@ -85,8 +88,15 @@ def insert_into_database(connection: psycopg.Connection, courses: dict[str, dict
                 prerequisites,
                 recommended
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (course_code) DO NOTHING
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (course_code) DO UPDATE SET
+                breadth = EXCLUDED.breadth,
+                title = EXCLUDED.title,
+                course_hours = EXCLUDED.course_hours,
+                description = EXCLUDED.description,
+                exclusion = EXCLUDED.exclusion,
+                prerequisites = EXCLUDED.prerequisites,
+                recommended = EXCLUDED.recommended
             """,
             rows
         )
