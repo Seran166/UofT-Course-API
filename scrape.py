@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup, Tag
 import pprint
-
+import re
+from typing import Optional
 
 def parse_html_with_response(response: requests.Response):
     """
@@ -61,6 +62,9 @@ def parse_html(soup: BeautifulSoup):
 
         prerequisites = find_field_content(page, 'views-field views-field-field-prerequisite')
         prerequisites = prerequisites.get_text(" ", strip=True) if prerequisites is not None else None
+
+        corequisites = find_field_content(page,'views-field views-field-field-corequisite')
+        corequisites = corequisites.get_text(" ", strip=True) if corequisites is not None else None
         
         exclusion = find_field_content(page, 'views-field views-field-field-exclusion')
         exclusion = exclusion.get_text(" ", strip=True) if exclusion is not None else None
@@ -71,20 +75,45 @@ def parse_html(soup: BeautifulSoup):
         breadth = find_field_content(page, 'views-field views-field-field-breadth-requirements')
         breadth = breadth.get_text(" ", strip=True) if breadth is not None else None
 
+        
+        prerequisite_course_list = extract_course_codes(prerequisites) if prerequisites is not None else None
+        corequisite_course_list = extract_course_codes(corequisites) if corequisites is not None else None
+
         course_info = {
                 "course code": course_code,
                 "title": title,
                 "course hours": course_hours, 
                 "description": description, 
                 "prerequisites": prerequisites, 
+                "corequisites": corequisites,
                 "exclusion": exclusion,
                 "recommended": recommended, 
-                "breadth": breadth
+                "breadth": breadth,
+                "prerequisite course list": prerequisite_course_list,
+                "corequisite course list": corequisite_course_list
             }
         
         courses[course_code] = course_info
         
     return courses
+
+def extract_course_codes(text: str) -> Optional[list[str]]:
+    """Return U of T course codes found in *text*.
+
+    Course codes are returned in uppercase. A code consists of three letters,
+    three digits, a course-weight letter (H or Y), and a campus indicator (1, 3, or 5).
+    Duplicates are removed.
+
+    >>> extract_course_codes("CIN105Y1 and (MAT130H1 / MAT135H1)")
+    ['CIN105Y1', 'MAT130H1', 'MAT135H1']
+    """
+    r = list(set(re.findall(r"(?<![A-Z0-9])[A-Z]{3}\d{3}[HY][153]", text.upper())))
+
+    if len(r) == 0:
+        return None
+    
+    return r
+        
 
 
 def main():
