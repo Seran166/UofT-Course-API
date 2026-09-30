@@ -1,5 +1,5 @@
-- Create list of return methods, in convenient methods!
-- Replace the classes with a suitable json format.
+
+- Need to change the type to list
 
 Parse the prerequisites in a suitable way
     - There's a credit requirement

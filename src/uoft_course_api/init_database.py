@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import parse_qs, unquote, urlsplit
 import psycopg
-from scrape import parse_html_with_file
+from src.uoft_course_api.scrape import parse_html_with_file
 
 def database_url() -> str:
     load_dotenv()
