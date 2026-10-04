@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from psycopg.rows import dict_row
+from sqlalchemy import select
 from src.uoft_course_api.database import engine, AsyncSessionLocal
 from typing import Annotated
 from src.uoft_course_api.models import Course, CourseCode, SessionCode, SectionCode
@@ -38,8 +38,8 @@ db_dependency = Annotated[AsyncSession, Depends(get_db)]
 async def get_course(course_code: CourseCode, db: db_dependency) -> Course:
     course = await db.get(Course, course_code.upper())
 
-    if course is  None:
-        raise HTTPException(status_code=404, detail="Course not found.")
+    if course is None:
+        raise HTTPException(status_code=404, detail= f"Course {course_code} not found.")
 
     return course
 
@@ -51,6 +51,7 @@ async def get_all_data(course_code: CourseCode, db: db_dependency):
         raise HTTPException(status_code=404, detail="Course not found.")
 
     return get_all_sessions(course_code, course.title)
+
 
 @app.get("/basic-course-infos/{course_code}")
 async def basic_course_info(course_code: CourseCode, db: db_dependency):
@@ -66,7 +67,9 @@ async def prerequsites_descriptions(course_code: CourseCode, db: db_dependency):
 @app.get("/prerequisite-codes/{course_code}")
 async def prerequsites_codes_mentioned(course_code: CourseCode, db: db_dependency):
     prereq_course = await get_course(course_code, db)
-    return prereq_course.prerequisite_course_list
+
+    if prereq_course.prerequisite_course_list is not None:
+        return prereq_course.prerequisite_course_list
 
 
 @app.get("/recommended/{course_code}")
@@ -74,14 +77,27 @@ async def recommended(course_code: CourseCode, db: db_dependency):
     reccomended_course = await get_course(course_code, db)
     return reccomended_course.recommended
 
+
 @app.get("/exclusions/{course_code}")
 async def exclusions(course_code: CourseCode, db: db_dependency):
     exclusion_course = await get_course(course_code, db)
     return exclusion_course.exclusion
 
+
 @app.get("/postrequisites/{course_code}")
 async def postrequisites(course_code: CourseCode, db: db_dependency):
-    return {"message": "Hello World"}
+    # For error checking
+    course = get_course(course_code, db)
+
+    statement = select(Course.course_code).where(
+        Course.prerequisite_course_list.contains([course_code])
+    )
+
+    result = await db.scalars(statement)
+    course_codes = result.all()
+
+    return course_codes
+
 
 @app.get("/sections/{course_code}/{session_code}")
 async def sections(course_code: CourseCode, session_code: SessionCode, db: db_dependency):
@@ -97,6 +113,7 @@ async def sections(course_code: CourseCode, session_code: SessionCode, db: db_de
     data = course_json(course_response)
 
     return data['sections']
+
 
 @app.get("/lectures/{course_code}/{session_code}")
 async def lectures(course_code: str, session_code: SessionCode, db: db_dependency):
@@ -136,6 +153,7 @@ async def tutorials(course_code: str, session_code: SessionCode, db: db_dependen
     sections = data['sections']
     return [section for section in sections if section['teach_method'] == 'TUT']
 
+
 @app.get("/enrollment-infos/{course_code}/{session_code}/{section_code}")
 async def enrollment(course_code: CourseCode, session_code: SessionCode, section_code: SectionCode, db: db_dependency):
     course = await get_course(course_code, db)
@@ -147,7 +165,7 @@ async def enrollment(course_code: CourseCode, session_code: SessionCode, section
     if course_response is None:
         raise HTTPException(status_code=404, detail="Course not found.")
 
-    
+
     data = course_json(course_response)
     if data is None:
         raise HTTPException(status_code=404, detail="Course not found.")
@@ -155,3 +173,6 @@ async def enrollment(course_code: CourseCode, session_code: SessionCode, section
     res = [section["current_enrolment"] for section in data["sections"]  if section["name"] == section_code ]
     return res[0]
 
+
+if __name__ == '__main__':
+    db = get_db()

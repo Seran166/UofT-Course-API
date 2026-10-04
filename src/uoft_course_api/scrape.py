@@ -115,7 +115,6 @@ def extract_course_codes(text: str) -> Optional[list[str]]:
     return r
         
 
-
 def main():
     print("Running...")
     url = 'https://artsci.calendar.utoronto.ca/print/view/pdf/course_search/print_page/debug?page=0'

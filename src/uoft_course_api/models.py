@@ -1,5 +1,6 @@
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 from sqlalchemy import Text, JSON, DateTime, func
+from sqlalchemy.dialects.postgresql import ARRAY
 from typing import Annotated, Any
 from datetime import datetime
 from pydantic import StringConstraints
@@ -18,8 +19,8 @@ class Course(Base):
     prerequisites: Mapped[str | None] = mapped_column(Text)
     corequisites: Mapped[str | None] = mapped_column(Text)
     recommended: Mapped[str | None] = mapped_column(Text)
-    prerequisite_course_list: Mapped[str | None] = mapped_column(Text)
-    corequisite_course_list: Mapped[str | None] = mapped_column(Text)
+    prerequisite_course_list: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    corequisite_course_list: Mapped[list | None] = mapped_column(ARRAY(Text))
 
 class DetailedCourse(Base):
     __tablename__ = "course_cache"
@@ -34,6 +35,7 @@ CourseCode = Annotated[
         min_length=8,
         max_length=8,
         pattern=r"^[A-Za-z]{3}[0-9]{3}[HYhy][0-9]$",
+        to_upper=True
     ),
 ]
 
@@ -43,6 +45,7 @@ SessionCode = Annotated[
         min_length=1,
         max_length=1,
         pattern=r"^[FSYfsy]$",
+        to_upper=True
     ),
 ]
 
@@ -52,5 +55,6 @@ SectionCode = Annotated[
         min_length=7,
         max_length=7,
         pattern=r"^[A-Za-z]{3}\d{4}$",
+        to_upper=True
     ),
 ]
