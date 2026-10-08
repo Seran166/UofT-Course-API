@@ -1,8 +1,6 @@
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
-from sqlalchemy import Text, JSON, DateTime, func
+from sqlalchemy import Text
 from sqlalchemy.dialects.postgresql import ARRAY
-from typing import Any
-from datetime import datetime
 
 Base = declarative_base()
 

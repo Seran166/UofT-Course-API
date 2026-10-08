@@ -120,7 +120,6 @@ class CourseOfferingResponse(BaseModel):
     sections: list[SectionResponse] = Field(description="All teaching sections in this offering.")
 
 
-# Preserve endpoints' existing JSON strings, arrays, numbers, and null values.
 RequirementTextResponse = Annotated[str | None, Field(description="Stored requirement text, or null when absent.")]
 PrerequisiteCodesResponse = Annotated[
     list[CourseCode] | None,
