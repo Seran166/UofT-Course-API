@@ -8,11 +8,38 @@ import requests
 from requests import Response
 import pprint
 from dataclasses import dataclass
-from .models import CourseCode
+from pydantic import ValidationError
+from uoft_course_api.schemas import CourseCode, CourseOfferingResponse
 
 
-def course_json(course_response: Response) -> dict:
-    course_data = dict(course_response.json())['payload']['pageableCourse']['courses'][0]
+class UoftAPIError(Exception):
+    """An upstream failure, distinct from a course with no matching offering."""
+
+
+class UoftAPITimeout(UoftAPIError):
+    """The upstream request timed out."""
+
+
+def validate_response(response: Response) -> None:
+    if not 200 <= response.status_code < 300:
+        raise UoftAPIError("U of T API returned an unsuccessful response.")
+
+
+def course_json(course_response: Response) -> dict | None:
+    validate_response(course_response)
+    try:
+        courses = course_response.json()['payload']['pageableCourse']['courses']
+        if not isinstance(courses, list):
+            raise TypeError("courses must be a list")
+        if not courses:
+            return None
+        converted = _course_json(courses[0])
+        return CourseOfferingResponse.model_validate(converted).model_dump()
+    except (ValidationError, ValueError, KeyError, TypeError, IndexError) as error:
+        raise UoftAPIError("U of T API returned invalid course data.") from error
+
+
+def _course_json(course_data: dict) -> dict:
     course_info = course_data['cmCourseInfo']
 
     return {
@@ -136,26 +163,31 @@ def call_uoft_api(course_code: CourseCode, course_title: str, section_code: str)
 
     url = "https://api.easi.utoronto.ca/ttb/getPageableCourses"
 
-    response = requests.post(
-        url,
-        headers=headers,
-        json=payload,
-        timeout=30
-    )
+    try:
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+    except requests.Timeout as error:
+        raise UoftAPITimeout("U of T API request timed out.") from error
+    except requests.RequestException as error:
+        raise UoftAPIError("Could not reach the U of T API.") from error
 
+    validate_response(response)
     return response
 
 def get_all_sessions(course_code: CourseCode, course_title: str) -> list[dict]:
     sessions = []
     for c in ['F', 'S', 'Y']:
         response = call_uoft_api(course_code, course_title, c)
-        if response.status_code == 200:
-            sessions.append(course_json(response))
+        course = course_json(response)
+        if course is not None:
+            sessions.append(course)
 
     return sessions
 
 if __name__ == '__main__':
     sessions = get_all_sessions('PHL100Y1', 'Ancient Wisdom, Modern Insights: A Historical Introduction to Philosophy')
-
     pprint.pprint(sessions)
-

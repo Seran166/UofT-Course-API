@@ -58,7 +58,7 @@ def parse_html(soup: BeautifulSoup):
         course_hours = course_hours.get_text(" ", strip=True) if course_hours is not None else None
         
         description_div = find_field_content_body(page, 'views-field views-field-body')
-        description = description_div.p.get_text(" ", strip=True)if description_div is not None and description_div.p is not None else None
+        description = description_div.get_text(" ", strip=True)if description_div is not None and description_div.p is not None else None
 
         prerequisites = find_field_content(page, 'views-field views-field-field-prerequisite')
         prerequisites = prerequisites.get_text(" ", strip=True) if prerequisites is not None else None
@@ -107,7 +107,7 @@ def extract_course_codes(text: str) -> Optional[list[str]]:
     >>> extract_course_codes("CIN105Y1 and (MAT130H1 / MAT135H1)")
     ['CIN105Y1', 'MAT130H1', 'MAT135H1']
     """
-    r = list(set(re.findall(r"(?<![A-Z0-9])[A-Z]{3}\d{3}[HY][153]", text.upper())))
+    r = list(set(re.findall(r"(?<![A-Z0-9])[A-Z]{3}\d{3}[HY][153](?![A-Z0-9])", text.upper())))
 
     if len(r) == 0:
         return None
@@ -116,17 +116,19 @@ def extract_course_codes(text: str) -> Optional[list[str]]:
         
 
 def main():
+    """ Extracting HTML from uoft's academic calendar to query information about courses later
+    """
     print("Running...")
     url = 'https://artsci.calendar.utoronto.ca/print/view/pdf/course_search/print_page/debug?page=0'
 
     response = requests.get(url, timeout=30)
-    if response.status_code == 200:
-        courses = parse_html_with_response(response)
-        pprint.pprint(courses)
-        print(len(courses))
-    else:
-        print(response.status_code)
+    response.raise_for_status()
+
+    with open("expected_responses/uoft.html", "wb") as file:
+        file.write(response.content)
+
+    print("Saved calendar HTML to expected_responses/uoft.html")
 
 
 if __name__ == "__main__":
-    parse_html_with_file()
+    main()

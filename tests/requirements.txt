@@ -1,0 +1,4 @@
+# Application dependencies are declared in the root pyproject.toml.
+httpx>=0.27,<1
+pytest>=8,<10
+pytest-asyncio>=1,<2

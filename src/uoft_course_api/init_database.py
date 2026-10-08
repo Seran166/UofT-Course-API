@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from urllib.parse import parse_qs, unquote, urlsplit
 import psycopg
-from .scrape import parse_html_with_file
+from uoft_course_api.scrape import parse_html_with_file
 
 def database_url() -> str:
     load_dotenv()
@@ -112,7 +112,7 @@ def insert_into_database(connection: psycopg.Connection, courses: dict[str, dict
 def main():
     courses = parse_html_with_file()
 
-    with connect_to_local() as connection:
+    with connect_to_remote() as connection:
         create_courses_table(connection)
         insert_into_database(connection, courses)
 
