@@ -333,7 +333,3 @@ async def enrollment(course_code: CourseCode, session_code: SessionCode, section
     if not res:
         raise HTTPException(status_code=404, detail="Section not found.")
     return res[0]
-
-
-if __name__ == '__main__':
-    db = get_db()
