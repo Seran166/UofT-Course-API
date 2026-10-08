@@ -1,0 +1,9 @@
+# Runtime dependencies for Railpack; keep in sync with pyproject.toml.
+beautifulsoup4
+fastapi
+psycopg[binary]
+pydantic>=2,<3
+python-dotenv
+requests
+sqlalchemy[asyncio]>=2,<3
+uvicorn[standard]
