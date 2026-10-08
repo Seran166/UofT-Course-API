@@ -6,6 +6,21 @@ stored calendar data with live timetable data from the U of T API.
 Get course descriptions, prerequisites, other courses that mention a course as a prerequisite, exclusions, sections, instructors,
 meeting times, and enrolment counts.
 
+## Live API
+
+The API is publicly available—no local setup is required.
+
+- [Interactive API documentation](https://uoft-course-api-production-9ec1.up.railway.app/docs)
+- [Example: CSC108H1 calendar information](https://uoft-course-api-production-9ec1.up.railway.app/basic-course-infos/CSC108H1)
+
+**Base URL:** `https://uoft-course-api-production-9ec1.up.railway.app`
+
+Example request:
+
+```bash
+curl https://uoft-course-api-production-9ec1.up.railway.app/basic-course-infos/CSC108H1
+```
+
 ## Setup
 
 Requires Python 3.13+ and a PostgreSQL database. Run these commands from the
