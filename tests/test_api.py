@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 from fastapi import HTTPException
-from tests.support import api, models, response
+from tests.support import api, models, response, no_results_response
 from tests.support import uoft_client
 
 @pytest.mark.asyncio
@@ -161,6 +161,32 @@ async def test_unknown_section_returns_404(http):
 async def test_empty_offering_returns_404(http, upstream, path):
     upstream.return_value.json.return_value['payload']['pageableCourse']['courses'] = []
     assert (await http.get(path)).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_all_data_skips_upstream_no_results_404(http):
+    winter = response()
+    winter.json.return_value['payload']['pageableCourse']['courses'][0]['sectionCode'] = 'S'
+    with patch.object(uoft_client.requests, 'post', side_effect=[
+        no_results_response(), winter, no_results_response(),
+    ]) as post:
+        result = await http.get('/csc108h1')
+    assert result.status_code == 200
+    assert [offering['section'] for offering in result.json()] == ['S']
+    assert [call.kwargs['json']['courseCodeAndTitleProps']['courseSectionCode']
+            for call in post.call_args_list] == ['F', 'S', 'Y']
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('path', [
+    '/sections/CSC108H1/F', '/lectures/CSC108H1/F',
+    '/tutorials/CSC108H1/F', '/enrollment-infos/CSC108H1/F/LEC0101',
+])
+async def test_upstream_no_results_404_returns_not_found(http, monkeypatch, path):
+    monkeypatch.setattr(api, 'call_uoft_api', uoft_client.call_uoft_api)
+    with patch.object(uoft_client.requests, 'post', return_value=no_results_response()):
+        result = await http.get(path)
+    assert result.status_code == 404
 
 
 @pytest.mark.asyncio

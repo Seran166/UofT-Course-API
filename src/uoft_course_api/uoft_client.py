@@ -20,13 +20,43 @@ class UoftAPITimeout(UoftAPIError):
     """The upstream request timed out."""
 
 
+def is_no_results(data: object) -> bool:
+    """Recognize an empty offering without ignoring malformed or mixed errors."""
+    if not isinstance(data, dict):
+        return False
+
+    if data.get("payload") is not None:
+        return False
+
+    statuses = data.get("status")
+    if not isinstance(statuses, list) or not statuses:
+        return False
+
+    for status in statuses:
+        if not isinstance(status, dict):
+            return False
+        if status.get("code") != 4404:
+            return False
+
+    return True
+
+
 def validate_response(response: Response) -> None:
+    if response.status_code == 404:
+        try:
+            data = response.json()
+        except ValueError:
+            data = None
+        if is_no_results(data):
+            return
     if not 200 <= response.status_code < 300:
         raise UoftAPIError("U of T API returned an unsuccessful response.")
 
 
 def course_json(course_response: Response) -> dict | None:
     validate_response(course_response)
+    if course_response.status_code == 404:
+        return None
     try:
         courses = course_response.json()['payload']['pageableCourse']['courses']
         if not isinstance(courses, list):

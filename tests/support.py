@@ -35,6 +35,15 @@ def section():
     }
 
 
+def no_results_response():
+    result = MagicMock(status_code=404)
+    result.json.return_value = {
+        'payload': None,
+        'status': [{'code': 4404, 'message': 'No results found. Please try modifying your search criteria.'}],
+    }
+    return result
+
+
 def response():
     result = MagicMock(status_code=200)
     result.json.return_value = {"payload": {"pageableCourse": {"courses": [{

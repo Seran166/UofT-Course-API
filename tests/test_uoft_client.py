@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 import requests
-from tests.support import uoft_client as client, response, section, meeting
+from tests.support import uoft_client as client, response, section, meeting, no_results_response
 
 def test_format_time():
     for value, expected in [(0, '00:00'), (60000, '00:01'), (3599999, '00:59'), (86399999, '23:59')]:
@@ -68,6 +68,31 @@ def test_empty_successful_session_is_skipped():
     empty.json.return_value['payload']['pageableCourse']['courses'] = []
     with patch.object(client, 'call_uoft_api', return_value=empty):
         assert client.get_all_sessions('CSC108H1', 'Programming') == []
+
+
+def test_no_results_http_404_is_empty_offering():
+    raw = no_results_response()
+    with patch.object(client.requests, 'post', return_value=raw):
+        assert client.course_json(client.call_uoft_api('CSC111H1', 'Foundations', 'F')) is None
+
+
+@pytest.mark.parametrize('payload', [
+    None, {}, {'payload': None, 'status': []},
+    {'payload': None, 'status': [{'code': 9999}]},
+    {'payload': None, 'status': [{'code': 4404}, {'code': 9999}]},
+])
+def test_unrecognized_404_still_raises(payload):
+    raw = no_results_response()
+    raw.json.return_value = payload
+    with pytest.raises(client.UoftAPIError):
+        client.course_json(raw)
+
+
+def test_non_json_404_still_raises():
+    raw = no_results_response()
+    raw.json.side_effect = ValueError('Not JSON')
+    with pytest.raises(client.UoftAPIError):
+        client.course_json(raw)
 
 
 @pytest.mark.parametrize('payload', [None, {}, {'payload': None}, {'payload': {'pageableCourse': {'courses': None}}}, {'payload': {'pageableCourse': {'courses': [{}]}}}])
